@@ -628,7 +628,8 @@
       if (res.status === 401) { doLogout(); return; }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      loadedData = JSON.parse(atob(data.content.replace(/\n/g, '')));
+      const bytes = Uint8Array.from(atob(data.content.replace(/\n/g, '')), c => c.charCodeAt(0));
+      loadedData = JSON.parse(new TextDecoder().decode(bytes));
       renderList();
       setLog(`✓ ${loadedData.length}件 読み込み完了`);
     } catch(e) {
