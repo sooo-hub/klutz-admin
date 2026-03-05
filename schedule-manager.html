@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SCHEDULE MANAGER — Klutz / clutz</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0c0c;
+    --surface: #141414;
+    --border: #242424;
+    --klutz: #e8003a;
+    --clutz: #0066ff;
+    --yellow: #ffd100;
+    --text: #efefef;
+    --muted: #555;
+    --success: #00d97e;
+    --error: #ff3b5c;
+    --warning: #ffa500;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── AUTH SCREEN ── */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .auth-box {
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--klutz);
+    padding: 32px 28px;
+  }
+
+  .auth-eyebrow {
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: var(--klutz);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .auth-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 4px;
+    margin-bottom: 24px;
+    line-height: 1;
+  }
+
+  .auth-title span { color: var(--clutz); }
+
+  .auth-field { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  input, select {
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    padding: 11px 14px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+
+  input:focus, select:focus { border-color: var(--klutz); }
+  input::placeholder { color: var(--muted); }
+  select option { background: #111; }
+
+  .auth-note {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-top: 12px;
+  }
+
+  .auth-note a { color: var(--warning); text-decoration: none; }
+
+  /* ── MAIN APP ── */
+  #app { display: none; }
+
+  header {
+    padding: 24px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .eyebrow {
+    font-size: 9px;
+    letter-spacing: 5px;
+    color: var(--klutz);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 30px;
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+
+  h1 span { color: var(--clutz); }
+
+  .logout-btn {
+    font-size: 11px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    touch-action: manipulation;
+    transition: all 0.15s;
+  }
+
+  .logout-btn:hover { border-color: var(--muted); color: var(--text); }
+
+  .wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 18px 16px 100px;
+  }
+
+  /* ── FAB ── */
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    background: var(--klutz);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(232,0,58,0.5);
+    touch-action: manipulation;
+    transition: transform 0.15s, background 0.15s;
+    z-index: 100;
+  }
+
+  .fab:active { transform: scale(0.92); }
+
+  /* ── BOTTOM SHEET ── */
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .sheet-overlay.open { opacity: 1; pointer-events: all; }
+
+  .sheet {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #111;
+    border-top: 2px solid var(--klutz);
+    border-radius: 16px 16px 0 0;
+    z-index: 201;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+
+  .sheet.clutz-sheet { border-top-color: var(--clutz); }
+  .sheet.open { transform: translateY(0); }
+
+  .sheet-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 12px auto 0;
+  }
+
+  .sheet-header {
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: #111;
+    z-index: 1;
+  }
+
+  .sheet-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 3px;
+    color: var(--klutz);
+  }
+
+  .sheet.clutz-sheet .sheet-title { color: var(--clutz); }
+
+  .band-toggle { display: flex; gap: 8px; margin-top: 10px; }
+
+  .band-btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 17px;
+    letter-spacing: 3px;
+    padding: 7px 0;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    flex: 1;
+    text-align: center;
+    touch-action: manipulation;
+    transition: all 0.15s;
+  }
+
+  .band-btn.active-klutz { background: var(--klutz); border-color: var(--klutz); color: #fff; }
+  .band-btn.active-clutz { background: var(--clutz); border-color: var(--clutz); color: #fff; }
+
+  .sheet-body { padding: 14px 20px; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .form-row .full { grid-column: span 2; }
+  .form-field { display: flex; flex-direction: column; gap: 5px; }
+
+  .sheet-actions {
+    display: flex;
+    gap: 10px;
+    padding: 4px 20px 0;
+    margin-bottom: 8px;
+  }
+
+  .btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 3px;
+    padding: 13px 20px;
+    border: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary { background: var(--klutz); color: #fff; flex: 1; }
+  .btn-primary.clutz { background: var(--clutz); }
+  .btn-cancel {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+
+  /* ── LOG ── */
+  .log-bar {
+    background: #080808;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--success);
+    padding: 9px 14px;
+    margin-bottom: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--success);
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+  }
+
+  .log-bar.err  { border-left-color: var(--error);   color: var(--error); }
+  .log-bar.warn { border-left-color: var(--warning);  color: var(--warning); }
+  .log-bar.info { border-left-color: #5bc0ff; color: #5bc0ff; }
+
+  /* ── LIST ── */
+  .list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .list-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 4px;
+    color: var(--muted);
+  }
+
+  .badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    background: var(--klutz);
+    color: #fff;
+    padding: 2px 9px;
+  }
+
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 12px 0 6px;
+    font-weight: 700;
+  }
+
+  .schedule-list { display: flex; flex-direction: column; gap: 2px; }
+
+  .sched-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--klutz);
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    animation: fadein 0.25s ease;
+  }
+
+  .sched-item.clutz { border-left-color: var(--clutz); }
+  .sched-item.past  { opacity: 0.42; }
+
+  @keyframes fadein { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+
+  .item-date { text-align: center; }
+
+  .date-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    line-height: 1;
+    color: var(--yellow);
+  }
+
+  .sched-item.clutz .date-num { color: #5bc0ff; }
+  .sched-item.past  .date-num { color: var(--muted); }
+
+  .date-mo {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .item-info { min-width: 0; cursor: pointer; }
+
+  .item-band {
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: var(--klutz);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .sched-item.clutz .item-band { color: var(--clutz); }
+
+  .item-title-text {
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+
+  .item-meta {
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .item-actions { display: flex; flex-direction: column; gap: 5px; }
+
+  .action-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-family: 'Noto Sans JP', sans-serif;
+    touch-action: manipulation;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .action-btn.edit:active { border-color: var(--yellow); color: var(--yellow); }
+  .action-btn.del:active  { border-color: var(--error);  color: var(--error); }
+
+  .empty {
+    text-align: center;
+    padding: 36px 20px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 11px; height: 11px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ── AUTH SCREEN ── -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-eyebrow">Schedule Manager</div>
+    <div class="auth-title">KLUTZ <span>/</span> CLUTZ</div>
+    <div class="auth-field">
+      <label>GitHub Token</label>
+      <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="doLogin()">▶ ログイン</button>
+    <p class="auth-note">
+      トークンは <a href="https://github.com/settings/tokens/new" target="_blank">GitHub → Settings → Developer settings → Personal access tokens</a> から発行。スコープは <strong>repo</strong> を選択してください。<br>入力したトークンはこのブラウザ内にのみ保存されます。
+    </p>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="app">
+  <header>
+    <div>
+      <div class="eyebrow">Live Schedule</div>
+      <h1>KLUTZ <span>/</span> CLUTZ</h1>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+  </header>
+
+  <div class="wrap">
+    <div class="log-bar info" id="log-bar">起動中...</div>
+
+    <div class="list-header">
+      <div class="list-title">SCHEDULES</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="badge" id="count-badge">0</span>
+        <button class="btn btn-cancel" style="font-size:11px;padding:5px 12px;" onclick="loadFromGitHub()">↺ 再読込</button>
+      </div>
+    </div>
+
+    <div class="section-label">Upcoming</div>
+    <div class="schedule-list" id="upcoming-list"><div class="empty">読み込み中...</div></div>
+
+    <div class="section-label" style="margin-top:8px;">Past Shows</div>
+    <div class="schedule-list" id="past-list"><div class="empty">—</div></div>
+  </div>
+
+  <button class="fab" onclick="openAddSheet()">＋</button>
+</div>
+
+<!-- ── BOTTOM SHEET ── -->
+<div class="sheet-overlay" id="overlay" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="sheet-title">ADD LIVE</div>
+    <div class="band-toggle">
+      <button class="band-btn active-klutz" id="btn-klutz" onclick="selectBand('Klutz')">Klutz</button>
+      <button class="band-btn" id="btn-clutz" onclick="selectBand('clutz')">clutz</button>
+    </div>
+  </div>
+  <div class="sheet-body">
+    <div class="form-row">
+      <div class="form-field">
+        <label>日付 *</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="form-field">
+        <label>ライブタイトル *</label>
+        <input type="text" id="f-title" placeholder="街の風景 Vol.3">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field full">
+        <label>会場 *</label>
+        <input type="text" id="f-venue" placeholder="静岡 Sunash">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>開場</label>
+        <input type="time" id="f-open">
+      </div>
+      <div class="form-field">
+        <label>開演</label>
+        <input type="time" id="f-start">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field full">
+        <label>料金</label>
+        <input type="text" id="f-price" placeholder="1000 + 1Drink">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field full">
+        <label>メモ（共演者など）</label>
+        <input type="text" id="f-memo" placeholder="対バン：〇〇、△△">
+      </div>
+    </div>
+  </div>
+  <div class="sheet-actions">
+    <button class="btn btn-primary" id="submit-btn" onclick="submitSchedule()">▲ COMMIT</button>
+    <button class="btn btn-cancel" onclick="closeSheet()">キャンセル</button>
+  </div>
+</div>
+
+<script>
+  const GH_USER = 'sooo-hub';
+  const GH_REPO = 'klutz';
+  const GH_PATH = 'lives.json';
+
+  let token = '';
+  let loadedData = [];
+  let editIndex = null;
+  let currentBand = 'Klutz';
+
+  // ── AUTH ──
+  function doLogin() {
+    const t = document.getElementById('token-input').value.trim();
+    if (!t) { setLog('トークンを入力してください', 'warn'); return; }
+    localStorage.setItem('gh_token', t);
+    token = t;
+    showApp();
+  }
+
+  function doLogout() {
+    localStorage.removeItem('gh_token');
+    token = '';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('token-input').value = '';
+  }
+
+  function showApp() {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadFromGitHub();
+  }
+
+  // ── LOG ──
+  function setLog(msg, type = '') {
+    const el = document.getElementById('log-bar');
+    el.textContent = msg;
+    el.className = 'log-bar' + (type ? ' ' + type : '');
+  }
+
+  // ── GITHUB ──
+  function ghHeaders() {
+    return {
+      Authorization: `token ${token}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    };
+  }
+
+  async function loadFromGitHub() {
+    setLog('読み込み中...', 'info');
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_PATH}`,
+        { headers: ghHeaders() }
+      );
+      if (res.status === 401) { doLogout(); return; }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      loadedData = JSON.parse(atob(data.content.replace(/\n/g, '')));
+      renderList();
+      setLog(`✓ ${loadedData.length}件 読み込み完了`);
+    } catch(e) {
+      setLog(`✗ 読み込み失敗: ${e.message}`, 'err');
+    }
+  }
+
+  async function getFileSHA() {
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_PATH}`,
+      { headers: ghHeaders() }
+    );
+    if (!res.ok) return null;
+    return (await res.json()).sha;
+  }
+
+  async function pushData(newData, message) {
+    const sha = await getFileSHA();
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(newData, null, 2))));
+    const body = { message, content: encoded, branch: 'main' };
+    if (sha) body.sha = sha;
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_PATH}`,
+      { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) }
+    );
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+    return newData;
+  }
+
+  // ── SHEET ──
+  function openAddSheet() {
+    editIndex = null;
+    resetForm();
+    selectBand('Klutz');
+    document.getElementById('sheet-title').textContent = 'ADD LIVE';
+    document.getElementById('submit-btn').textContent = '▲ COMMIT';
+    openSheet();
+  }
+
+  function openEditSheet(idx) {
+    editIndex = idx;
+    const item = loadedData[idx];
+    selectBand(item.band || 'Klutz');
+    document.getElementById('f-date').value  = item.date  || '';
+    document.getElementById('f-title').value = item.title || '';
+    document.getElementById('f-venue').value = item.venue || '';
+    document.getElementById('f-open').value  = item.open  || '';
+    document.getElementById('f-start').value = item.start || '';
+    document.getElementById('f-price').value = item.price || '';
+    document.getElementById('f-memo').value  = item.memo  || '';
+    document.getElementById('sheet-title').textContent = 'EDIT LIVE';
+    document.getElementById('submit-btn').textContent = '▲ UPDATE';
+    openSheet();
+  }
+
+  function openSheet() {
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('sheet').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSheet() {
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('sheet').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function selectBand(band) {
+    currentBand = band;
+    const sheet = document.getElementById('sheet');
+    const kBtn  = document.getElementById('btn-klutz');
+    const cBtn  = document.getElementById('btn-clutz');
+    const sbtn  = document.getElementById('submit-btn');
+    if (band === 'Klutz') {
+      kBtn.className = 'band-btn active-klutz';
+      cBtn.className = 'band-btn';
+      sheet.classList.remove('clutz-sheet');
+      sbtn.classList.remove('clutz');
+    } else {
+      kBtn.className = 'band-btn';
+      cBtn.className = 'band-btn active-clutz';
+      sheet.classList.add('clutz-sheet');
+      sbtn.classList.add('clutz');
+    }
+  }
+
+  function resetForm() {
+    ['f-date','f-title','f-venue','f-open','f-start','f-price','f-memo']
+      .forEach(id => document.getElementById(id).value = '');
+  }
+
+  async function submitSchedule() {
+    const date  = document.getElementById('f-date').value;
+    const title = document.getElementById('f-title').value.trim();
+    const venue = document.getElementById('f-venue').value.trim();
+    if (!date || !title || !venue) {
+      setLog('日付・タイトル・会場は必須です', 'warn');
+      closeSheet(); return;
+    }
+
+    const entry = { date, title, band: currentBand, venue };
+    const open  = document.getElementById('f-open').value;
+    const start = document.getElementById('f-start').value;
+    const price = document.getElementById('f-price').value.trim();
+    const memo  = document.getElementById('f-memo').value.trim();
+    if (open)  entry.open  = open;
+    if (start) entry.start = start;
+    if (price) entry.price = price;
+    if (memo)  entry.memo  = memo;
+
+    const btn = document.getElementById('submit-btn');
+    const isEdit = editIndex !== null;
+    btn.innerHTML = '<span class="spinner"></span>' + (isEdit ? 'UPDATING...' : 'COMMITTING...');
+    btn.disabled = true;
+
+    try {
+      let newData;
+      if (isEdit) {
+        newData = [...loadedData];
+        newData[editIndex] = entry;
+      } else {
+        newData = [...loadedData, entry];
+      }
+      newData.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const msg = isEdit
+        ? `edit: ${date} ${title} (${currentBand})`
+        : `add: ${date} ${title} (${currentBand})`;
+      loadedData = await pushData(newData, msg);
+      renderList();
+      setLog(`✓ ${isEdit ? '更新' : '追加'}しました: ${title}`);
+      closeSheet();
+    } catch(e) {
+      setLog(`✗ コミット失敗: ${e.message}`, 'err');
+    } finally {
+      btn.innerHTML = isEdit ? '▲ UPDATE' : '▲ COMMIT';
+      btn.disabled = false;
+    }
+  }
+
+  async function deleteEntry(idx) {
+    const item = loadedData[idx];
+    if (!confirm(`「${item.title}」を削除しますか？`)) return;
+    setLog('削除中...', 'info');
+    try {
+      const newData = loadedData.filter((_, i) => i !== idx);
+      loadedData = await pushData(newData, `delete: ${item.date} ${item.title}`);
+      renderList();
+      setLog(`✓ 削除しました: ${item.title}`);
+    } catch(e) {
+      setLog(`✗ 削除失敗: ${e.message}`, 'err');
+    }
+  }
+
+  // ── RENDER ──
+  const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+  function renderList() {
+    const today = new Date().toISOString().split('T')[0];
+    const upcoming = loadedData.filter(i => i.date >= today);
+    const past     = loadedData.filter(i => i.date < today).slice().reverse();
+    document.getElementById('count-badge').textContent = loadedData.length;
+    renderSection('upcoming-list', upcoming, false);
+    renderSection('past-list', past, true);
+  }
+
+  function renderSection(elId, items, isPast) {
+    const el = document.getElementById(elId);
+    if (!items.length) { el.innerHTML = '<div class="empty">—</div>'; return; }
+    el.innerHTML = items.map(item => {
+      const gIdx = loadedData.indexOf(item);
+      const d = new Date(item.date + 'T00:00:00');
+      const isClutZ = item.band === 'clutz';
+      return `
+        <div class="sched-item ${isClutZ ? 'clutz' : ''} ${isPast ? 'past' : ''}">
+          <div class="item-date">
+            <div class="date-num">${d.getDate()}</div>
+            <div class="date-mo">${MONTHS[d.getMonth()]} ${d.getFullYear()}</div>
+          </div>
+          <div class="item-info" onclick="openEditSheet(${gIdx})">
+            <div class="item-band">${item.band || 'Klutz'}</div>
+            <div class="item-title-text">${item.title || '—'}</div>
+            <div class="item-meta">${item.venue}${item.open ? ' / 開場 '+item.open : ''}${item.price ? ' / '+item.price : ''}</div>
+          </div>
+          <div class="item-actions">
+            <button class="action-btn edit" onclick="openEditSheet(${gIdx})">編集</button>
+            <button class="action-btn del"  onclick="deleteEntry(${gIdx})">削除</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── INIT ──
+  const saved = localStorage.getItem('gh_token');
+  if (saved) { token = saved; showApp(); }
+</script>
+</body>
+</html>
