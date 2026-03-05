@@ -373,7 +373,7 @@
 
   .date-num {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 26px;
+    font-size: 20px;
     line-height: 1;
     color: var(--yellow);
   }
@@ -647,7 +647,8 @@
 
   async function pushData(newData, message) {
     const sha = await getFileSHA();
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(newData, null, 2))));
+    const json = JSON.stringify(newData, null, 2);
+    const encoded = btoa(String.fromCharCode(...new TextEncoder().encode(json)));
     const body = { message, content: encoded, branch: 'main' };
     if (sha) body.sha = sha;
     const res = await fetch(
@@ -807,8 +808,8 @@
       return `
         <div class="sched-item ${isClutZ ? 'clutz' : ''} ${isPast ? 'past' : ''}">
           <div class="item-date">
-            <div class="date-num">${d.getDate()}</div>
-            <div class="date-mo">${MONTHS[d.getMonth()]} ${d.getFullYear()}</div>
+            <div class="date-num">${d.getMonth()+1}.${String(d.getDate()).padStart(2,'0')}</div>
+            <div class="date-mo">${d.getFullYear()}</div>
           </div>
           <div class="item-info" onclick="openEditSheet(${gIdx})">
             <div class="item-band">${item.band || 'Klutz'}</div>
