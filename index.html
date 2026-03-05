@@ -794,8 +794,10 @@
 
   function renderList() {
     const today = new Date().toISOString().split('T')[0];
-    const upcoming = loadedData.filter(i => i.date >= today);
-    const past     = loadedData.filter(i => i.date < today).slice().reverse();
+    // Upcoming: 近い順（昇順）
+    const upcoming = loadedData.filter(i => i.date >= today).sort((a,b) => a.date.localeCompare(b.date));
+    // Past: 直近が上（降順）
+    const past     = loadedData.filter(i => i.date < today).sort((a,b) => b.date.localeCompare(a.date));
     document.getElementById('count-badge').textContent = loadedData.length;
     renderSection('upcoming-list', upcoming, false);
     renderSection('past-list', past, true);
