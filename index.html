@@ -570,9 +570,11 @@
 </div>
 
 <script>
-  const GH_USER = 'sooo-hub';
-  const GH_REPO = 'klutz';
-  const GH_PATH = 'lives.json';
+  const GH_USER      = 'sooo-hub';
+  const GH_TOOL_REPO = 'klutz-admin'; // このツール自体があるリポジトリ
+  const GH_DATA_REPO = 'klutz';       // lives.json があるリポジトリ
+  const GH_REPO      = GH_DATA_REPO;  // API呼び出しはこちらを使う
+  const GH_PATH      = 'lives.json';
 
   let token = '';
   let loadedData = [];
