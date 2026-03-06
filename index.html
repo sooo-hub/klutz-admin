@@ -564,6 +564,21 @@
     </div>
     <div class="form-row">
       <div class="form-field full">
+        <label>フライヤー画像</label>
+        <div id="flyer-preview-wrap" style="display:none;margin-bottom:8px;">
+          <img id="flyer-preview" style="width:100%;max-height:200px;object-fit:contain;background:#0a0a0a;border:1px solid var(--border);">
+          <button onclick="removeFlyer()" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px;font-family:'Noto Sans JP',sans-serif;font-size:11px;cursor:pointer;margin-top:4px;">✕ 画像を削除</button>
+        </div>
+        <input type="file" id="f-flyer" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif"
+          style="display:none;" onchange="onFlyerSelect(this)">
+        <button onclick="document.getElementById('f-flyer').click()"
+          style="width:100%;background:#0a0a0a;border:1px dashed var(--border);color:var(--muted);padding:14px;font-family:'Noto Sans JP',sans-serif;font-size:12px;cursor:pointer;letter-spacing:1px;"
+          id="flyer-pick-btn">
+          📷 写真フォルダから選択
+        </button>
+      </div>
+    <div class="form-row">
+      <div class="form-field full">
         <label>公開設定</label>
         <div style="display:flex;gap:8px;margin-top:2px;">
           <button class="band-btn active-klutz" id="btn-public" onclick="selectPublic(true)" style="font-size:13px;letter-spacing:2px;">✓ 公開</button>
@@ -589,6 +604,56 @@
   let editIndex = null;
   let currentBand = 'Klutz';
   let isPublic = true;
+  let flyerFile = null;   // 選択中の画像File
+  let flyerPath = null;   // 既存の画像パス（編集時）
+
+  function onFlyerSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    flyerFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('flyer-preview').src = e.target.result;
+      document.getElementById('flyer-preview-wrap').style.display = 'block';
+      document.getElementById('flyer-pick-btn').textContent = '📷 画像を変更';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeFlyer() {
+    flyerFile = null;
+    flyerPath = null;
+    document.getElementById('f-flyer').value = '';
+    document.getElementById('flyer-preview-wrap').style.display = 'none';
+    document.getElementById('flyer-pick-btn').textContent = '📷 写真フォルダから選択';
+  }
+
+  async function uploadFlyer(file, date) {
+    // ファイル名: flyers/YYYY-MM-DD.jpg など
+    const ext = file.name.split('.').pop().toLowerCase().replace('heic','jpg').replace('heif','jpg');
+    const path = `flyers/${date}.${ext}`;
+    const base64 = await new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = e => res(e.target.result.split(',')[1]);
+      reader.onerror = rej;
+      reader.readAsDataURL(file);
+    });
+    // 既存ファイルのSHAを取得（上書き用）
+    let sha = null;
+    try {
+      const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`, { headers: ghHeaders() });
+      if (r.ok) sha = (await r.json()).sha;
+    } catch(e) {}
+
+    const body = { message: `flyer: ${date}`, content: base64, branch: 'main' };
+    if (sha) body.sha = sha;
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${path}`,
+      { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) }
+    );
+    if (!res.ok) throw new Error('フライヤーのアップロードに失敗しました');
+    return path;
+  }
 
   function selectPublic(pub) {
     isPublic = pub;
@@ -712,6 +777,17 @@
     document.getElementById('f-start').value = item.start || '';
     document.getElementById('f-price').value = item.price || '';
     document.getElementById('f-memo').value  = item.memo  || '';
+    // フライヤー
+    flyerFile = null;
+    flyerPath = item.flyer || null;
+    if (flyerPath) {
+      const url = `https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${flyerPath}`;
+      document.getElementById('flyer-preview').src = url;
+      document.getElementById('flyer-preview-wrap').style.display = 'block';
+      document.getElementById('flyer-pick-btn').textContent = '📷 画像を変更';
+    } else {
+      removeFlyer();
+    }
     document.getElementById('sheet-title').textContent = 'EDIT LIVE';
     document.getElementById('submit-btn').textContent = '▲ UPDATE';
     openSheet();
@@ -751,6 +827,7 @@
   function resetForm() {
     ['f-date','f-title','f-venue','f-open','f-start','f-price','f-memo']
       .forEach(id => document.getElementById(id).value = '');
+    removeFlyer();
   }
 
   async function submitSchedule() {
@@ -778,6 +855,12 @@
     btn.disabled = true;
 
     try {
+      // フライヤーが新たに選択されていたらアップロード
+      if (flyerFile) {
+        setLog('フライヤーをアップロード中...', 'info');
+        flyerPath = await uploadFlyer(flyerFile, date);
+      }
+      if (flyerPath) entry.flyer = flyerPath;
       let newData;
       if (isEdit) {
         newData = [...loadedData];
