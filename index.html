@@ -562,6 +562,14 @@
         <input type="text" id="f-memo" placeholder="対バン：〇〇、△△">
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-field full">
+        <label>公開設定</label>
+        <div style="display:flex;gap:8px;margin-top:2px;">
+          <button class="band-btn active-klutz" id="btn-public" onclick="selectPublic(true)" style="font-size:13px;letter-spacing:2px;">✓ 公開</button>
+          <button class="band-btn" id="btn-private" onclick="selectPublic(false)" style="font-size:13px;letter-spacing:2px;">🔒 非公開</button>
+        </div>
+      </div>
   </div>
   <div class="sheet-actions">
     <button class="btn btn-primary" id="submit-btn" onclick="submitSchedule()">▲ COMMIT</button>
@@ -580,6 +588,22 @@
   let loadedData = [];
   let editIndex = null;
   let currentBand = 'Klutz';
+  let isPublic = true;
+
+  function selectPublic(pub) {
+    isPublic = pub;
+    const pBtn = document.getElementById('btn-public');
+    const rBtn = document.getElementById('btn-private');
+    if (pub) {
+      pBtn.className = 'band-btn active-klutz';
+      rBtn.className = 'band-btn';
+    } else {
+      pBtn.className = 'band-btn';
+      rBtn.className = 'band-btn active-klutz';
+      rBtn.style.background = '#555';
+      rBtn.style.borderColor = '#555';
+    }
+  }
 
   // ── AUTH ──
   function doLogin() {
@@ -670,6 +694,7 @@
     editIndex = null;
     resetForm();
     selectBand('Klutz');
+    selectPublic(true);
     document.getElementById('sheet-title').textContent = 'ADD LIVE';
     document.getElementById('submit-btn').textContent = '▲ COMMIT';
     openSheet();
@@ -679,6 +704,7 @@
     editIndex = idx;
     const item = loadedData[idx];
     selectBand(item.band || 'Klutz');
+    selectPublic(item.public !== false);
     document.getElementById('f-date').value  = item.date  || '';
     document.getElementById('f-title').value = item.title || '';
     document.getElementById('f-venue').value = item.venue || '';
@@ -736,7 +762,7 @@
       closeSheet(); return;
     }
 
-    const entry = { date, title, band: currentBand, venue };
+    const entry = { date, title, band: currentBand, venue, public: isPublic };
     const open  = document.getElementById('f-open').value;
     const start = document.getElementById('f-start').value;
     const price = document.getElementById('f-price').value.trim();
@@ -817,7 +843,7 @@
             <div class="date-mo">${d.getFullYear()}</div>
           </div>
           <div class="item-info" onclick="openEditSheet(${gIdx})">
-            <div class="item-band">${item.band || 'Klutz'}</div>
+            <div class="item-band">${item.band || 'Klutz'}${item.public === false ? ' <span style="font-size:9px;background:#333;color:#aaa;padding:1px 6px;letter-spacing:1px;">非公開</span>' : ''}</div>
             <div class="item-title-text">${item.title || '—'}</div>
             <div class="item-meta">${item.venue}${item.open ? ' / 開場 '+item.open : ''}${item.price ? ' / '+item.price : ''}</div>
           </div>
