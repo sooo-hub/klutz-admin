@@ -577,14 +577,14 @@
           📷 写真フォルダから選択
         </button>
       </div>
-    <div class="form-row">
       <div class="form-field full">
         <label>公開設定</label>
         <div style="display:flex;gap:8px;margin-top:2px;">
-          <button class="band-btn active-klutz" id="btn-public" onclick="selectPublic(true)" style="font-size:13px;letter-spacing:2px;">✓ 公開</button>
-          <button class="band-btn" id="btn-private" onclick="selectPublic(false)" style="font-size:13px;letter-spacing:2px;">🔒 非公開</button>
+          <button class="action-btn" id="btn-public" onclick="selectPublic(true)" style="flex:1;text-align:center;padding:8px 10px;">✓ 公開</button>
+          <button class="action-btn" id="btn-private" onclick="selectPublic(false)" style="flex:1;text-align:center;padding:8px 10px;">🔒 非公開</button>
         </div>
       </div>
+    </div>
   </div>
   <div class="sheet-actions">
     <button class="btn btn-primary" id="submit-btn" onclick="submitSchedule()">▲ COMMIT</button>
@@ -660,13 +660,15 @@
     const pBtn = document.getElementById('btn-public');
     const rBtn = document.getElementById('btn-private');
     if (pub) {
-      pBtn.className = 'band-btn active-klutz';
-      rBtn.className = 'band-btn';
+      pBtn.style.borderColor = 'var(--success)';
+      pBtn.style.color = 'var(--success)';
+      rBtn.style.borderColor = 'var(--border)';
+      rBtn.style.color = 'var(--muted)';
     } else {
-      pBtn.className = 'band-btn';
-      rBtn.className = 'band-btn active-klutz';
-      rBtn.style.background = '#555';
-      rBtn.style.borderColor = '#555';
+      pBtn.style.borderColor = 'var(--border)';
+      pBtn.style.color = 'var(--muted)';
+      rBtn.style.borderColor = 'var(--muted)';
+      rBtn.style.color = 'var(--text)';
     }
   }
 
