@@ -469,7 +469,7 @@
 <div id="auth-screen">
   <div class="auth-box">
     <div class="auth-eyebrow">Schedule Manager</div>
-    <div class="auth-title">KLUTZ <span>/</span> CLUTZ</div>
+    <div class="auth-title">KLUTZ <span>/</span> clutz</div>
     <div class="auth-field">
       <label>GitHub Token</label>
       <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
@@ -486,7 +486,7 @@
   <header>
     <div>
       <div class="eyebrow">Live Schedule</div>
-      <h1>KLUTZ <span>/</span> CLUTZ</h1>
+      <h1>KLUTZ <span>/</span> clutz</h1>
     </div>
     <button class="logout-btn" onclick="doLogout()">ログアウト</button>
   </header>
@@ -936,9 +936,9 @@
     el.innerHTML = items.map(item => {
       const gIdx = loadedData.indexOf(item);
       const d = new Date(item.date + 'T00:00:00');
-      const isClutZ = item.band === 'clutz';
+      const isClutz = item.band === 'clutz';
       return `
-        <div class="sched-item ${isClutZ ? 'clutz' : ''} ${isPast ? 'past' : ''}">
+        <div class="sched-item ${isClutz ? 'clutz' : ''} ${isPast ? 'past' : ''}">
           <div class="item-date">
             <div class="date-num">${d.getMonth()+1}.${String(d.getDate()).padStart(2,'0')}</div>
             <div class="date-mo">${d.getFullYear()}</div>
