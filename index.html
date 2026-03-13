@@ -494,6 +494,22 @@
   <div class="wrap">
     <div class="log-bar info" id="log-bar">起動中...</div>
 
+    <!-- ヘッダー画像 -->
+    <div style="margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--yellow);padding:16px 18px;">
+      <div class="card-title" style="color:var(--yellow);margin-bottom:12px;">🖼 HEADER IMAGE</div>
+      <div id="header-img-preview-wrap" style="display:none;margin-bottom:10px;">
+        <img id="header-img-preview" style="width:100%;max-height:200px;object-fit:contain;background:#0a0a0a;border:1px solid var(--border);">
+      </div>
+      <input type="file" id="header-img-input" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif" style="display:none;" onchange="onHeaderImgSelect(this)">
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('header-img-input').click()"
+          style="flex:1;background:#0a0a0a;border:1px dashed var(--border);color:var(--muted);padding:12px;font-family:'Noto Sans JP',sans-serif;font-size:12px;cursor:pointer;"
+          id="header-img-pick-btn">📷 画像を選択</button>
+        <button class="btn" id="header-img-upload-btn" onclick="uploadHeaderImage()"
+          style="background:var(--yellow);color:#000;font-size:13px;padding:10px 18px;display:none;">▲ アップロード</button>
+      </div>
+    </div>
+
     <div class="list-header">
       <div class="list-title">SCHEDULES</div>
       <div style="display:flex;gap:8px;align-items:center;">
@@ -938,6 +954,60 @@
           </div>
         </div>`;
     }).join('');
+  }
+
+  // ── HEADER IMAGE ──
+  let headerImgFile = null;
+
+  function onHeaderImgSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    headerImgFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('header-img-preview').src = e.target.result;
+      document.getElementById('header-img-preview-wrap').style.display = 'block';
+      document.getElementById('header-img-pick-btn').textContent = '📷 画像を変更';
+      document.getElementById('header-img-upload-btn').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadHeaderImage() {
+    if (!headerImgFile) return;
+    const btn = document.getElementById('header-img-upload-btn');
+    btn.innerHTML = '<span class="spinner"></span>';
+    btn.disabled = true;
+    setLog('ヘッダー画像をアップロード中...', 'info');
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = e => res(e.target.result.split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(headerImgFile);
+      });
+      // 既存SHAを取得
+      let sha = null;
+      try {
+        const r = await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/header-image.jpg`, { headers: ghHeaders() });
+        if (r.ok) sha = (await r.json()).sha;
+      } catch(e) {}
+      const body = { message: 'update: header image', content: base64, branch: 'main' };
+      if (sha) body.sha = sha;
+      const res = await fetch(
+        `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/header-image.jpg`,
+        { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setLog('✓ ヘッダー画像をアップロードしました');
+      headerImgFile = null;
+      btn.style.display = 'none';
+    } catch(e) {
+      setLog(`✗ アップロード失敗: ${e.message}`, 'err');
+    } finally {
+      btn.innerHTML = '▲ アップロード';
+      btn.disabled = false;
+    }
   }
 
   // ── INIT ──
