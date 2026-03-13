@@ -1114,7 +1114,7 @@
         reader.onerror = rej;
         reader.readAsDataURL(file);
       });
-      const filename = `${band}-about.jpg`;
+      const filename = `img/${band}-about.jpg`;
       let sha = null;
       try {
         const r = await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${filename}`, { headers: ghHeaders() });
