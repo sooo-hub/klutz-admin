@@ -510,6 +510,37 @@
       </div>
     </div>
 
+    <!-- About画像 -->
+    <div style="margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--klutz);padding:16px 18px;">
+      <div class="card-title" style="color:var(--klutz);margin-bottom:12px;">🖼 KLUTZ — ABOUT IMAGE</div>
+      <div id="klutz-about-preview-wrap" style="display:none;margin-bottom:10px;">
+        <img id="klutz-about-preview" style="width:100%;max-height:200px;object-fit:contain;background:#0a0a0a;border:1px solid var(--border);">
+      </div>
+      <input type="file" id="klutz-about-input" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif" style="display:none;" onchange="onAboutImgSelect(this,'klutz')">
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('klutz-about-input').click()"
+          style="flex:1;background:#0a0a0a;border:1px dashed var(--border);color:var(--muted);padding:12px;font-family:'Noto Sans JP',sans-serif;font-size:12px;cursor:pointer;"
+          id="klutz-about-pick-btn">📷 画像を選択</button>
+        <button class="btn" id="klutz-about-upload-btn" onclick="uploadAboutImage('klutz')"
+          style="background:var(--klutz);color:#fff;font-size:13px;padding:10px 18px;display:none;">▲ アップロード</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--clutz);padding:16px 18px;">
+      <div class="card-title" style="color:var(--clutz);margin-bottom:12px;">🖼 clutz — ABOUT IMAGE</div>
+      <div id="clutz-about-preview-wrap" style="display:none;margin-bottom:10px;">
+        <img id="clutz-about-preview" style="width:100%;max-height:200px;object-fit:contain;background:#0a0a0a;border:1px solid var(--border);">
+      </div>
+      <input type="file" id="clutz-about-input" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif" style="display:none;" onchange="onAboutImgSelect(this,'clutz')">
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('clutz-about-input').click()"
+          style="flex:1;background:#0a0a0a;border:1px dashed var(--border);color:var(--muted);padding:12px;font-family:'Noto Sans JP',sans-serif;font-size:12px;cursor:pointer;"
+          id="clutz-about-pick-btn">📷 画像を選択</button>
+        <button class="btn" id="clutz-about-upload-btn" onclick="uploadAboutImage('clutz')"
+          style="background:var(--clutz);color:#fff;font-size:13px;padding:10px 18px;display:none;">▲ アップロード</button>
+      </div>
+    </div>
+
     <div class="list-header">
       <div class="list-title">SCHEDULES</div>
       <div style="display:flex;gap:8px;align-items:center;">
@@ -1001,6 +1032,61 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setLog('✓ ヘッダー画像をアップロードしました');
       headerImgFile = null;
+      btn.style.display = 'none';
+    } catch(e) {
+      setLog(`✗ アップロード失敗: ${e.message}`, 'err');
+    } finally {
+      btn.innerHTML = '▲ アップロード';
+      btn.disabled = false;
+    }
+  }
+
+  // ── ABOUT IMAGE ──
+  const aboutImgFiles = { klutz: null, clutz: null };
+
+  function onAboutImgSelect(input, band) {
+    const file = input.files[0];
+    if (!file) return;
+    aboutImgFiles[band] = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById(`${band}-about-preview`).src = e.target.result;
+      document.getElementById(`${band}-about-preview-wrap`).style.display = 'block';
+      document.getElementById(`${band}-about-pick-btn`).textContent = '📷 画像を変更';
+      document.getElementById(`${band}-about-upload-btn`).style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadAboutImage(band) {
+    const file = aboutImgFiles[band];
+    if (!file) return;
+    const btn = document.getElementById(`${band}-about-upload-btn`);
+    btn.innerHTML = '<span class="spinner"></span>';
+    btn.disabled = true;
+    setLog(`${band} About画像をアップロード中...`, 'info');
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = e => res(e.target.result.split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+      const filename = `${band}-about.jpg`;
+      let sha = null;
+      try {
+        const r = await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${filename}`, { headers: ghHeaders() });
+        if (r.ok) sha = (await r.json()).sha;
+      } catch(e) {}
+      const body = { message: `update: ${band} about image`, content: base64, branch: 'main' };
+      if (sha) body.sha = sha;
+      const res = await fetch(
+        `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${filename}`,
+        { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setLog(`✓ ${band} About画像をアップロードしました`);
+      aboutImgFiles[band] = null;
       btn.style.display = 'none';
     } catch(e) {
       setLog(`✗ アップロード失敗: ${e.message}`, 'err');
