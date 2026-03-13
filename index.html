@@ -499,6 +499,7 @@
       <div class="card-title" style="color:var(--yellow);margin-bottom:12px;">🖼 HEADER IMAGE</div>
       <div id="header-img-preview-wrap" style="display:none;margin-bottom:10px;">
         <img id="header-img-preview" style="width:100%;max-height:200px;object-fit:contain;background:#0a0a0a;border:1px solid var(--border);">
+        <button onclick="deleteImage('header-image.jpg','header-img-preview-wrap','header-img-pick-btn')" class="action-btn del" style="width:100%;margin-top:6px;text-align:center;padding:7px;">✕ 削除</button>
       </div>
       <input type="file" id="header-img-input" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif" style="display:none;" onchange="onHeaderImgSelect(this)">
       <div style="display:flex;gap:8px;">
@@ -515,6 +516,7 @@
       <div class="card-title" style="color:var(--klutz);margin-bottom:12px;">🖼 KLUTZ — ABOUT IMAGE</div>
       <div id="klutz-about-preview-wrap" style="display:none;margin-bottom:10px;">
         <img id="klutz-about-preview" style="width:100%;max-height:200px;object-fit:contain;background:#0a0a0a;border:1px solid var(--border);">
+        <button onclick="deleteImage('klutz-about.jpg','klutz-about-preview-wrap','klutz-about-pick-btn')" class="action-btn del" style="width:100%;margin-top:6px;text-align:center;padding:7px;">✕ 削除</button>
       </div>
       <input type="file" id="klutz-about-input" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif" style="display:none;" onchange="onAboutImgSelect(this,'klutz')">
       <div style="display:flex;gap:8px;">
@@ -530,6 +532,7 @@
       <div class="card-title" style="color:var(--clutz);margin-bottom:12px;">🖼 clutz — ABOUT IMAGE</div>
       <div id="clutz-about-preview-wrap" style="display:none;margin-bottom:10px;">
         <img id="clutz-about-preview" style="width:100%;max-height:200px;object-fit:contain;background:#0a0a0a;border:1px solid var(--border);">
+        <button onclick="deleteImage('clutz-about.jpg','clutz-about-preview-wrap','clutz-about-pick-btn')" class="action-btn del" style="width:100%;margin-top:6px;text-align:center;padding:7px;">✕ 削除</button>
       </div>
       <input type="file" id="clutz-about-input" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif" style="display:none;" onchange="onAboutImgSelect(this,'clutz')">
       <div style="display:flex;gap:8px;">
@@ -740,6 +743,25 @@
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     loadFromGitHub();
+    loadExistingImages();
+  }
+
+  function loadExistingImages() {
+    const base = `https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/`;
+    const images = [
+      { url: base + 'header-image.jpg', previewId: 'header-img-preview', wrapId: 'header-img-preview-wrap', btnId: 'header-img-pick-btn' },
+      { url: base + 'klutz-about.jpg',  previewId: 'klutz-about-preview', wrapId: 'klutz-about-preview-wrap', btnId: 'klutz-about-pick-btn' },
+      { url: base + 'clutz-about.jpg',  previewId: 'clutz-about-preview', wrapId: 'clutz-about-preview-wrap', btnId: 'clutz-about-pick-btn' },
+    ];
+    images.forEach(({ url, previewId, wrapId, btnId }) => {
+      const img = new Image();
+      img.onload = () => {
+        document.getElementById(previewId).src = url + '?t=' + Date.now();
+        document.getElementById(wrapId).style.display = 'block';
+        document.getElementById(btnId).textContent = '📷 画像を変更';
+      };
+      img.src = url + '?t=' + Date.now();
+    });
   }
 
   // ── LOG ──
@@ -1038,6 +1060,26 @@
     } finally {
       btn.innerHTML = '▲ アップロード';
       btn.disabled = false;
+    }
+  }
+
+  async function deleteImage(filename, wrapId, btnId) {
+    if (!confirm(`「${filename}」を削除しますか？`)) return;
+    setLog('削除中...', 'info');
+    try {
+      const r = await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${filename}`, { headers: ghHeaders() });
+      if (!r.ok) throw new Error('ファイルが見つかりません');
+      const { sha } = await r.json();
+      const res = await fetch(
+        `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${filename}`,
+        { method: 'DELETE', headers: ghHeaders(), body: JSON.stringify({ message: `delete: ${filename}`, sha, branch: 'main' }) }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      document.getElementById(wrapId).style.display = 'none';
+      document.getElementById(btnId).textContent = '📷 画像を選択';
+      setLog(`✓ 削除しました: ${filename}`);
+    } catch(e) {
+      setLog(`✗ 削除失敗: ${e.message}`, 'err');
     }
   }
 
