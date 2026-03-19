@@ -1006,7 +1006,7 @@ margin-right: 4px;
       const d = new Date(item.date + 'T00:00:00');
       const isClutz = item.band === 'clutz';
       return `
-        <div class="sched-item ${isClutz ? 'clutz' : ''} ${isPast ? 'past' : ''}">
+        <div class="sched-item ${[isClutz ? 'clutz' : '', isPast ? 'past' : ''].filter(Boolean).join(' ')}">
           <div class="item-date">
             <div class="date-num">${d.getMonth()+1}.${String(d.getDate()).padStart(2,'0')}</div>
             <div class="date-mo">${d.getFullYear()}</div>
