@@ -702,7 +702,7 @@
     // 既存ファイルのSHAを取得（上書き用）
     let sha = null;
     try {
-      const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`, { headers: ghHeaders() });
+      const r = await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${path}`, { headers: ghHeaders() });
       if (r.ok) sha = (await r.json()).sha;
     } catch(e) {}
 
@@ -955,15 +955,14 @@
         ? `edit: ${date} ${title} (${currentBand})`
         : `add: ${date} ${title} (${currentBand})`;
       loadedData = await pushData(newData, msg);
-
       renderList();
       setLog(`✓ ${isEdit ? '更新' : '追加'}しました: ${title}`);
-      closeSheet();
     } catch(e) {
       setLog(`✗ コミット失敗: ${e.message}`, 'err');
     } finally {
       btn.innerHTML = isEdit ? '▲ UPDATE' : '▲ COMMIT';
       btn.disabled = false;
+      closeSheet();
     }
   }
 
